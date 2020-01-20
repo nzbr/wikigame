@@ -88,16 +88,20 @@ eurl = wikiurl+urlencode(args.end)
 
 # Crash if start or end article does not exist
 startpage = get_page_cached(surl).fetch()
-get_page_cached(eurl).fetch()
+endpage   = get_page_cached(eurl).fetch()
 
 pool = Pool()
 
 queue = [pool.apply_async(startpage.fetch, [])]
 known_pages[surl] = startpage
-qend = urlencode(args.end)
+qend = urlencode(endpage.title)
 
 shortest = []
 count = 0
+
+print("FROM:\t"+startpage.title)
+print("TO:\t"+endpage.title)
+print("")
 
 while len(queue) > 0:
     count += 1
@@ -117,11 +121,11 @@ while len(queue) > 0:
         child = [c for c in page.children if c.title == "?"+qend][0]
         print("> "+child.title)
         child.fetch()
-        if child.title == args.end:
+        if child.title == endpage.title:
             shortest = route + [child.title]
             break
 
-    if page.title == args.end:
+    if page.title == endpage.title:
         shortest = route
         break
     old = len(queue)
