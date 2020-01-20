@@ -31,7 +31,7 @@ class Page:
 
     def fetch(self) -> None:
         if self.fetched:
-            return
+            return self
         self.fetched = True
 
         html = urlopen(self.url).read()
@@ -86,13 +86,14 @@ def route_to_str(path: []) -> str:
 surl = wikiurl+urlencode(args.start)
 eurl = wikiurl+urlencode(args.end)
 
-# Crash if end article does not exist
+# Crash if start or end article does not exist
+startpage = get_page_cached(surl).fetch()
 get_page_cached(eurl).fetch()
 
 pool = Pool()
 
-queue = [pool.apply_async(get_page_cached(surl).fetch, [])]
-known_pages[surl] = queue[0]
+queue = [pool.apply_async(startpage.fetch, [])]
+known_pages[surl] = startpage
 qend = urlencode(args.end)
 
 shortest = []
