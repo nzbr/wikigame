@@ -85,7 +85,7 @@ surl = wikiurl+urlencode(args.start)
 eurl = wikiurl+urlencode(args.end)
 
 # Crash if end article does not exist
-get_page_cached(eurl)
+get_page_cached(eurl).fetch()
 
 queue = [get_page_cached(surl)]
 known_pages[surl] = queue[0]
