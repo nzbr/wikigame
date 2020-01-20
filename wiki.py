@@ -42,6 +42,8 @@ class Page:
         body = document.find_all(id="mw-content-text")[0]
         self.children = [get_page_cached(urljoin(self.url, x["href"].rsplit("#",1)[0])) for x in body.find_all("a") if x.has_attr("href") and x["href"].startswith("/wiki/") and not ':' in x["href"]]
 
+        return self
+
 
 # # We need this because Pool.map does not take lambdas for whatever reason
 # class Fetcher(object):
@@ -87,14 +89,18 @@ eurl = wikiurl+urlencode(args.end)
 # Crash if end article does not exist
 get_page_cached(eurl).fetch()
 
-queue = [get_page_cached(surl)]
+pool = Pool()
+
+queue = [pool.apply_async(get_page_cached(surl).fetch, [])]
 known_pages[surl] = queue[0]
 qend = urlencode(args.end)
+
 shortest = []
 count = 0
+
 while len(queue) > 0:
     count += 1
-    page = queue[0]
+    page = queue[0].get()
     queue = queue[1:]
 
     if page.processed:
@@ -122,7 +128,7 @@ while len(queue) > 0:
         if not child.url in known_pages:
             child.route = route
             known_pages[child.url] = child
-            queue += [child]
+            queue += [pool.apply_async(child.fetch, [])]
     print_line(str(count) + " | "+ str(len(queue)) + " | " + str(len(queue)-old) + "/" + str(len(page.children)) + " ("+ "%.f" % (0 if old == 0 else 100*(len(queue)-old)/len(page.children)) +"%) | " + route_to_str(route) + " -> "+str(ctitles))
 
 print("\n")
