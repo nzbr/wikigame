@@ -7,6 +7,7 @@ from urllib.parse import urljoin, quote
 from urllib.request import urlopen
 import argparse
 import os
+import traceback
 
 parser = argparse.ArgumentParser()
 parser.add_argument('cc', help='Country code for your Wikipedia (e.g. en, de)')
@@ -31,7 +32,7 @@ class Page:
 
     def fetch(self) -> None:
         if self.fetched:
-            return self
+            return
         self.fetched = True
 
         html = urlopen(self.url).read()
@@ -42,15 +43,12 @@ class Page:
         body = document.find_all(id="mw-content-text")[0]
         self.children = [get_page_cached(urljoin(self.url, x["href"].rsplit("#",1)[0])) for x in body.find_all("a") if x.has_attr("href") and x["href"].startswith("/wiki/") and not ':' in x["href"]]
 
+    def fetch_async(self):
+        try:
+            self.fetch()
+        except:
+            traceback.print_exc()
         return self
-
-
-# # We need this because Pool.map does not take lambdas for whatever reason
-# class Fetcher(object):
-    # def __init__(self):
-        # self.page = page
-    # def __call__(self, page: Page):
-        # page.fetch()
 
 
 known_pages = {}
@@ -87,12 +85,14 @@ surl = wikiurl+urlencode(args.start)
 eurl = wikiurl+urlencode(args.end)
 
 # Crash if start or end article does not exist
-startpage = get_page_cached(surl).fetch()
-endpage   = get_page_cached(eurl).fetch()
+startpage = get_page_cached(surl)
+endpage   = get_page_cached(eurl)
+startpage.fetch()
+endpage.fetch()
 
 pool = Pool()
 
-queue = [pool.apply_async(startpage.fetch, [])]
+queue = [pool.apply_async(startpage.fetch_async, [])]
 known_pages[surl] = startpage
 qend = urlencode(endpage.title)
 
@@ -111,7 +111,6 @@ while len(queue) > 0:
     if page.processed:
         continue
     page.processed = True
-    page.fetch()
 
     route = page.route + [page.title]
 
@@ -133,7 +132,7 @@ while len(queue) > 0:
         if not child.url in known_pages:
             child.route = route
             known_pages[child.url] = child
-            queue += [pool.apply_async(child.fetch, [])]
+            queue += [pool.apply_async(child.fetch_async, [])]
     print_line(str(count) + " | "+ str(len(queue)) + " | " + str(len(queue)-old) + "/" + str(len(page.children)) + " ("+ "%.f" % (0 if len(page.children) == 0 else 100*(len(queue)-old)/len(page.children)) +"%) | " + route_to_str(route) + " -> "+str(ctitles))
 
 print("\n")
