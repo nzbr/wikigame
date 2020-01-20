@@ -16,8 +16,6 @@ args = parser.parse_args()
 
 wikiurl = 'https://'+args.cc+'.wikipedia.org/wiki/'
 
-# TODO: testen ob start und zielartikel existieren (BEIDE!)
-
 def urlencode(text):
     return quote(text.replace(" ", "_"))
 
@@ -84,6 +82,11 @@ def route_to_str(path: []) -> str:
 
 
 surl = wikiurl+urlencode(args.start)
+eurl = wikiurl+urlencode(args.end)
+
+# Crash if end article does not exist
+get_page_cached(eurl)
+
 queue = [get_page_cached(surl)]
 known_pages[surl] = queue[0]
 qend = urlencode(args.end)
