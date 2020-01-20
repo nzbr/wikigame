@@ -130,7 +130,7 @@ while len(queue) > 0:
             child.route = route
             known_pages[child.url] = child
             queue += [pool.apply_async(child.fetch, [])]
-    print_line(str(count) + " | "+ str(len(queue)) + " | " + str(len(queue)-old) + "/" + str(len(page.children)) + " ("+ "%.f" % (0 if old == 0 else 100*(len(queue)-old)/len(page.children)) +"%) | " + route_to_str(route) + " -> "+str(ctitles))
+    print_line(str(count) + " | "+ str(len(queue)) + " | " + str(len(queue)-old) + "/" + str(len(page.children)) + " ("+ "%.f" % (0 if old == len(page.children) else 100*(len(queue)-old)/len(page.children)) +"%) | " + route_to_str(route) + " -> "+str(ctitles))
 
 print("\n")
 
