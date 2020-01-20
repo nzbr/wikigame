@@ -140,3 +140,6 @@ if shortest == []:
 
 print(route_to_str(shortest))
 
+# Kill all remaining fetch calls
+pool.terminate()
+
